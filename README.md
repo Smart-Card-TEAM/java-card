@@ -8,7 +8,7 @@
 
 
 
-Il faut se mettre dans `./sdks/jc211_kit/samples/`
+Il faut se mettre dans `./java-card/sdks/jc211_kit/samples/`
 ```
 javac -source 1.2 -target 1.1 -g -cp ../bin/api.jar com/sun/javacard/samples/HelloWorld/HelloWorld.java
 ```
@@ -18,6 +18,9 @@ java -classpath $JC_HOME_TOOLS/bin/converter.jar:. com.sun.javacard.converter.Co
 ```
 
 ## GPShell
+
+Se mettre dans le dossier `./java-card/sdks/jc211_kit/samples/com/sun/javacard/samples/HelloWorld/javacard`
+
 Lister les applets sur la smartcard:
 ```
 mode_201
