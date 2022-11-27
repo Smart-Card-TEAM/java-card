@@ -75,8 +75,14 @@ class SmartCard:
     def hello(self):
         return self.send_apdu(APDU_HELLO)
 
+    def change_pin(self):
+        self.PIN.changePin()
+    
+
 
 if __name__ == "__main__":
     card = SmartCard(cardservice.connection,debug=True)
+    card.hello()
     card.verify()
     card.hello()
+    card.change_pin()

@@ -41,3 +41,31 @@ class PIN:
                 print ("No more tries left, card blocked")
                 return False
         return verify
+
+    def sendAPDUChangePin(self,new_pin):
+        try:
+            new_pin = [int(x) for x in new_pin]
+        except:
+            print("PIN must be numeric")
+            return False
+        adpu = [self.CLA, self.INS_ACTIVATE, 0x00, 0x00, len(new_pin)] + new_pin
+        data, sw1, sw2 = self.connection.transmit(adpu)
+        if sw1 == 0x90 and sw2 == 0x00:
+            return True
+        else:
+            self.tries_left -= 1
+            return False
+
+    def changePin(self):
+        changed = False
+        while not changed:
+            pin = input("Enter new PIN: ")
+            if len(pin) < 4 or len(pin) > 8:
+                print("PIN must be between 4 and 8 digits")
+                continue
+            changed = self.sendAPDUChangePin(pin)
+            if not changed:
+                print("Wrong PIN, %d tries left" % self.tries_left)
+            if self.tries_left == 0:
+                print ("No more tries left, card blocked")
+                return False
