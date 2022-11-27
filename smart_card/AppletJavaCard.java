@@ -27,14 +27,14 @@
 // Original author:  Mitch Butler
 // */
 
-package com.sun.javacard.samples.HelloWorld;
+package smart_card;
 
 import javacard.framework.*;
 
 /**
  */
 
-public class HelloWorld extends Applet {
+public class AppletJavaCard extends Applet {
     private byte[] echoBytes;
     private static final short LENGTH_ECHO_BYTES = 256;
 
@@ -57,7 +57,7 @@ public class HelloWorld extends Applet {
     OwnerPIN pin;
     final static byte VERIFY = (byte) 0x20;
 
-    protected HelloWorld(byte[] bArray, short bOffset, byte bLength) {
+    protected AppletJavaCard(byte[] bArray, short bOffset, byte bLength) {
         echoBytes = new byte[LENGTH_ECHO_BYTES];
         pin = new OwnerPIN(PIN_TRY_LIMIT, MAX_PIN_SIZE);
 
@@ -75,7 +75,7 @@ public class HelloWorld extends Applet {
      * @param bLength the length in bytes of the parameter data in bArray
      */
     public static void install(byte[] bArray, short bOffset, byte bLength) {
-        new HelloWorld(bArray, bOffset, bLength);
+        new AppletJavaCard(bArray, bOffset, bLength);
     }
 
     public void deselect() {
