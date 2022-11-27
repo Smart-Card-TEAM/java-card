@@ -32,17 +32,50 @@ cardservice.connection.addObserver(observer)
 APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
 APDU_PIN = [APPLET, VERIFY, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
 APDU_SELECT = [0x00, 0xA4, 0x04, 0x00, len(APPLET_AID)] + APPLET_AID
-APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x05]
+APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
+
+
+APDU_RSA_MOD = [APPLET, 0x01, 0x00, 0x00, 0x00]
+APDU_RSA_EXPONENT = [APPLET, 0x02, 0x00, 0x00, 0x00]
+APDU_SIGN = [APPLET, 0x03, 0x00, 0x00, 0x3B]
+
 
 response, sw1, sw2 = cardservice.connection.transmit(APDU_SELECT)
 response, sw1, sw2 = cardservice.connection.transmit(APDU_PIN)
 response, sw1, sw2 = cardservice.connection.transmit(APDU_HELLO)
+GET_RESPONSE = [0X80, 0X00, 0x00, 0x00]
+response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
+
+response, sw1, sw2 = cardservice.connection.transmit(APDU_RSA_MOD)
+print("-------------------")
+GET_RESPONSE = [0X80, 0X01, 0x00, 0x00]
+response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
+n = int.from_bytes(bytes(response), byteorder='big')
+
+response, sw1, sw2 = cardservice.connection.transmit(APDU_RSA_EXPONENT)
+GET_RESPONSE = [0X80, 0X02, 0x00, 0x00]
+response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
 
 
+print("-------------------")
+e = int.from_bytes(bytes(response), byteorder='big')
+print("n: ", n, "e: ", e)
+rsaPubKey = RSAVerification(n, e)
+response, sw1, sw2 = cardservice.connection.transmit(APDU_SIGN)
+rsaPubKey.verify(bytes(response))
+GET_RESPONSE = [0X80, 0X03, 0x00, 0x00]
+response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
 
+# GET_RESPONSE = [0X80, 0X00, 0x00, 0x00]
+# response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
+# response, sw1, sw2 = cardservice.connection.transmit(APDU_RSA_EXPONENT)
+# GET_RESPONSE = [0X80, 0X03, 0x00, 0x00]
+# response, sw1, sw2 = cardservice.connection.transmit(GET_RESPONSE + [sw2])
+
+# print(rsaPubKey.key)
 class SmartCard:
     pass
 
 
-if __name__ == "__main__":
-    card = SmartCard()
+# if __name__ == "__main__":
+#     card = SmartCard()
