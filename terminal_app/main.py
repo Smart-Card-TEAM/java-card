@@ -41,7 +41,24 @@ response, sw1, sw2 = cardservice.connection.transmit(APDU_HELLO)
 
 
 class SmartCard:
-    pass
+    def __init__(self,debug=False):
+        self.AID = APPLET_AID
+        self.connection = None
+        self.PIN = None
+        self.cardtype = AnyCardType()
+        self.observer =ConsoleCardConnectionObserver()
+
+
+    def _connect(self):
+        cardrequest = CardRequest(timeout=1, cardType=self.cardtype)
+        cardservice = cardrequest.waitforcard()
+        cardservice.connection.connect()
+        self.connection = cardservice.connection
+        if debug :  
+            self.connection.addObserver(self.observer)
+        self.PIN = PIN(self.connection)
+    
+
 
 
 if __name__ == "__main__":

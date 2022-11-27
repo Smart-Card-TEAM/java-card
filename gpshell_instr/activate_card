@@ -1,0 +1,12 @@
+mode_201
+gemXpressoPro
+enable_trace
+establish_context
+card_connect
+select -AID a00000006203010c060102
+send_apdu -sc 0 -APDU 802000000400010203
+send_apdu -sc 0 -APDU 800100000400000000
+send_apdu -sc 0 -APDU 802000000400000000
+send_apdu -sc 0 -APDU 8000000000
+send_apdu -sc 0 -APDU 802000000400010203
+send_apdu -sc 0 -APDU 8000000000
