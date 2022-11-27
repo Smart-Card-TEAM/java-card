@@ -34,15 +34,17 @@ APDU_PIN = [APPLET, VERIFY, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
 APDU_SELECT = [0x00, 0xA4, 0x04, 0x00, len(APPLET_AID)] + APPLET_AID
 APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x05]
 
+APDU_RSA_EXPONENT = [APPLET, 0x01, 0x00, 0x00, 0x05]
+
 response, sw1, sw2 = cardservice.connection.transmit(APDU_SELECT)
 response, sw1, sw2 = cardservice.connection.transmit(APDU_PIN)
 response, sw1, sw2 = cardservice.connection.transmit(APDU_HELLO)
 
 
-
+response, sw1, sw2 = cardservice.connection.transmit(APDU_RSA_EXPONENT)
 class SmartCard:
     pass
 
 
-if __name__ == "__main__":
-    card = SmartCard()
+# if __name__ == "__main__":
+#     card = SmartCard()

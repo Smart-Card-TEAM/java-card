@@ -6,10 +6,11 @@ APPLET_ID=0xa0:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1:0x2
 all: convert uninstall_applet install_applet
 
 convert: compile
-	java -classpath $(JC_HOME_TOOLS)/bin/converter.jar:. com.sun.javacard.converter.Converter -verbose -exportpath $(PWD)/smart_card/api_export_files:AppletJavaCard -classdir . -applet $(APPLET_ID) smart_card.AppletJavaCard smart_card 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
+		java -classpath $(JC_HOME_TOOLS)/bin/converter.jar:. com.sun.javacard.converter.Converter -verbose -exportpath $(PWD)/smart_card/api_export_files:AppletJavaCard -classdir . -applet $(APPLET_ID) smart_card.api_export_files.AppletJavaCard smart_card.api_export_files 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
+
 
 compile:
-	$(CC) $(FLAGS) $(API_PATH) $(PWD)/smart_card/AppletJavaCard.java
+	$(CC) $(FLAGS) $(API_PATH) $(PWD)/smart_card/api_export_files/*.java
 
 install:
 	$(PWD)/install.sh

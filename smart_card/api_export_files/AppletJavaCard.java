@@ -1,21 +1,21 @@
 /*
-* $Workfile: HelloWorld.java $	$Revision: 17 $, $Date: 5/02/00 9:05p $
-*
-* Copyright (c) 1999 Sun Microsystems, Inc. All Rights Reserved.
-*
-* This software is the confidential and proprietary information of Sun
-* Microsystems, Inc. ("Confidential Information").  You shall not
-* disclose such Confidential Information and shall use it only in
-* accordance with the terms of the license agreement you entered into
-* with Sun.
-*
-* SUN MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE
-* SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-* PURPOSE, OR NON-INFRINGEMENT. SUN SHALL NOT BE LIABLE FOR ANY DAMAGES
-* SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
-* THIS SOFTWARE OR ITS DERIVATIVES.
-*/
+ * $Workfile: HelloWorld.java $	$Revision: 17 $, $Date: 5/02/00 9:05p $
+ *
+ * Copyright (c) 1999 Sun Microsystems, Inc. All Rights Reserved.
+ *
+ * This software is the confidential and proprietary information of Sun
+ * Microsystems, Inc. ("Confidential Information").  You shall not
+ * disclose such Confidential Information and shall use it only in
+ * accordance with the terms of the license agreement you entered into
+ * with Sun.
+ *
+ * SUN MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE
+ * SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, OR NON-INFRINGEMENT. SUN SHALL NOT BE LIABLE FOR ANY DAMAGES
+ * SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
+ * THIS SOFTWARE OR ITS DERIVATIVES.
+ */
 
 // /*
 // $Workfile: HelloWorld.java $
@@ -27,13 +27,13 @@
 // Original author:  Mitch Butler
 // */
 
-package api_export_files.javacard;
+package api_export_files;
 
 import javacard.framework.*;
 import javacard.security.*;
-import javacardx.crypto.Cipher;
 
 /**
+ *
  */
 
 public class AppletJavaCard extends Applet {
@@ -44,7 +44,7 @@ public class AppletJavaCard extends Applet {
      * Only this class's install method should create the applet object.
      */
 
-    private static final byte[] helloWorld = { 'H', 'e', 'l', 'l', 'o' };
+    private static final byte[] helloWorld = {'H', 'e', 'l', 'l', 'o'};
     private static final byte HW_CLA = (byte) 0x80;
     private static final byte INS_HELLO = (byte) 0x00;
 
@@ -61,8 +61,6 @@ public class AppletJavaCard extends Applet {
 
     final static byte INS_GET_PUBLIC_KEY = (byte) 0x01;
 
-    final static RSAKeyPair rsaKeyPair = new RSAKeyPair();
-    private final Cipher cipherRSA;
     RSAPrivateCrtKey rsa_PrivateCrtKey;
     RSAPublicKey rsa_PublicKey;
     KeyPair rsa_KeyPair;
@@ -76,18 +74,16 @@ public class AppletJavaCard extends Applet {
 
         // The installation parameters contain the PIN
         // initialization value
-        pin.update(new byte[] { 0x00, 0x01, 0x02, 0x03 }, (short) 0, (byte) 4);
+        pin.update(new byte[]{0x00, 0x01, 0x02, 0x03}, (short) 0, (byte) 4);
         rsa_KeyPair = new KeyPair(KeyPair.ALG_RSA_CRT, KeyBuilder.LENGTH_RSA_1024);
         rsa_KeyPair.genKeyPair();
         rsa_PublicKey = (RSAPublicKey) rsa_KeyPair.getPublic();
         rsa_PrivateCrtKey = (RSAPrivateCrtKey) rsa_KeyPair.getPrivate();
 
-        cipherRSA = Cipher.getInstance(Cipher.ALG_RSA_PKCS1, false);
-        register();
+        register(bArray, (short) (bOffset + 1), bArray[bOffset]);
     }
 
-    private void getPublicKeyMod( APDU apdu )
-    {
+    private void getPublicKeyMod(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         rsa_PublicKey.getModulus(buffer, ISO7816.OFFSET_CDATA);
         apdu.setOutgoing();
@@ -95,8 +91,7 @@ public class AppletJavaCard extends Applet {
         apdu.sendBytesLong(buffer, ISO7816.OFFSET_CDATA, (short) 128);
     }
 
-    private void getPublicKeyExp( APDU apdu )
-    {
+    private void getPublicKeyExp(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         rsa_PublicKey.getExponent(buffer, ISO7816.OFFSET_CDATA);
         apdu.setOutgoing();
@@ -134,48 +129,7 @@ public class AppletJavaCard extends Applet {
 
     }// end of select method
 
-    private void computeSignature(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-        short length = (short) (buffer[ISO7816.OFFSET_LC] & 0x00FF);
-        // Make sure that DigestInfo is <= 40% of the RSA key length.
-//        if ((short) (length * 4) > (short) (KeyBuilder.LENGTH_RSA_512 * 10) ||
-//            apdu.setIncomingAndReceive() != length) {
-//          ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-//        }
-//        if (!pinSubmitted[PIN_INDEX_PW1] || !pins[PIN_INDEX_PW1].isValidated()) {
-//          ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-//        }
-//        if (!signatureKey.getPrivate().isInitialized()) {
-//          ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-//        }
-//        if (pinValidForMultipleSignatures == (byte) 0) {
-//          pinSubmitted[PIN_INDEX_PW1] = false;
-//        }
 
-        cipherRSA.init(rsaKeyPair.getPrivate(), Cipher.MODE_ENCRYPT);
-        cipherRSA.doFinal(buffer, ISO7816.OFFSET_CDATA, length, buffer, (short) 0);
-        JCSystem.beginTransaction();
-//        if (signatureCounter[2] != (byte) 0xFF) {
-//          signatureCounter[2] = (byte) ((signatureCounter[2] & 0xFF) + 1);
-//        } else {
-//          signatureCounter[2] = 0;
-//          if (signatureCounter[1] != (byte) 0xFF) {
-//            signatureCounter[1] = (byte) ((signatureCounter[1] & 0xFF) + 1);
-//          } else if (signatureCounter[0] != (byte) 0xFF) {
-//            signatureCounter[1] = 0;
-//            signatureCounter[0] = (byte) ((signatureCounter[0] & 0xFF) + 1);
-//          } else {
-//            JCSystem.abortTransaction();
-//            ISOException.throwIt(ISO7816.SW_FILE_FULL);
-//          }
-//        }
-        JCSystem.commitTransaction();
-        apdu.setOutgoingAndSend((short) 0, KeyBuilder.LENGTH_RSA_512);
-      }
-
-    public void sendPublicKey(APDU apdu) {
-
-    }
     private void getHelloWorld(APDU apdu) {
         if (!pin.isValidated())
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
@@ -204,9 +158,9 @@ public class AppletJavaCard extends Applet {
     /**
      * Processes an incoming APDU.
      *
-     * @see APDU
      * @param apdu the incoming APDU
-     * @exception ISOException with the response bytes per ISO 7816-4
+     * @throws ISOException with the response bytes per ISO 7816-4
+     * @see APDU
      */
     public void process(APDU apdu) {
         if (selectingApplet()) {
@@ -228,6 +182,7 @@ public class AppletJavaCard extends Applet {
                 break;
             case GETPUBLICKEYMod_:
                 getPublicKeyMod(apdu);
+                // getHelloWorld(apdu);
                 break;
             case GETPUBLICKEYExp_:
                 getPublicKeyExp(apdu);
