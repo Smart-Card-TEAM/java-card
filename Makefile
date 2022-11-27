@@ -1,5 +1,4 @@
 CC=javac
-PROJECT_PATH=pwd
 
 FLAGS=-source 1.2 -target 1.1 -g -cp
 
