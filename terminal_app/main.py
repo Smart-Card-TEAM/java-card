@@ -3,7 +3,7 @@ from smartcard.CardType import AnyCardType
 from smartcard.CardConnection import CardConnection
 from smartcard.CardConnectionObserver import CardConnectionObserver
 from smartcard.CardRequest import CardRequest
-from smartcard.util import toHexString, toBytes
+from smartcard.util import toHexString, toBytes, toASCIIString
 # r=readers()
 
 
@@ -17,7 +17,7 @@ class ConsoleCardConnectionObserver( CardConnectionObserver ):
             print('disconnecting from ' + cardconnection.getReader())
 
         elif 'command'==ccevent.type:
-            print ('> ', toHexString( ccevent.args[0] ))
+            print ('> ', toASCIIString( ccevent.args[0] ))
 
         elif 'response'==ccevent.type:
             if []==ccevent.args[0]:
@@ -27,32 +27,24 @@ class ConsoleCardConnectionObserver( CardConnectionObserver ):
 
 
 # print(r)
-applet = 0x80
-Verfiy = 0x20
+APPLET = 0x80
+VERIFY = 0x20
 # connection = r[0].createConnection()
 # connection.connect()
-
+INS_DELETE  = 0xE4
+INS_INSTALL = 0xE6
+INS_LOAD    = 0xE8
+P1_INST_LOAD    = 0x02
+P1_INST_INST    = 0x04
+P1_INST_MSEL    = 0x08
+P1_INST_INSMSEL = P1_INST_INST | P1_INST_MSEL
+P1_INST_EXTRA   = 0x10
+P1_INST_PERSO   = 0x20
+P1_INST_REGUPD  = 0x40
 
 DF_TELECOM = [0x7F, 0x10]
 
-
-AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
-print(len(AID))
 pin = [0x00, 0x01, 0x02, 0x03]
-SELECT = [0x00, 0xC0, 0x0, 0x0, len(pin)]
-
-APDU = [applet, Verfiy, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
-
-APDUTEST =  [0x00, 0xA4, 0x04, 0x0c, 0x0B, 0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
-# data, sw1, sw2 = connection.transmit( SELECT + AID + APDU )
-# print("%x %x %s" % (sw1, sw2, data))
-
-# print(APDU)
-# data , sw1 , sw2 = connection.transmit(SELECT + APDU)
-# print("%x %x %s" % (sw1, sw2, data))
-
-apduHello = [0x80, 0x00, 0x00, 0x00, 0x00]
-SELECT = [0x00, 0xC0, 0x0, 0x0, len(apduHello)]
 
 cardtype = AnyCardType()
 cardrequest = CardRequest( timeout=1, cardType=cardtype )
@@ -65,15 +57,24 @@ cardservice.connection.addObserver(observer)
 # print("Sending: %s" % toHexString(SELECT + DF_TELECOM))
 # response, sw1, sw2 = cardservice.connection.transmit(SELECT + DF_TELECOM, CardConnection.T0_protocol )
 # print("%x %x %s" % (sw1, sw2, response))
+APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
 
 
-print("Sending: %s" % toHexString(SELECT + apduHello))
-response, sw1, sw2 = cardservice.connection.transmit(SELECT + apduHello)
-print("%x %x %s" % (sw1, sw2, response))
-GET_RESPONSE = [0XA0, 0XC0, 00, 00]
-apdu = GET_RESPONSE + [sw2]
-response, sw1, sw2 = cardservice.connection.transmit(apdu, CardConnection.T0_protocol )
-print("%x %x %s" % (sw1, sw2, response))
+APDU_PIN = [APPLET, VERIFY, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
+
+APDU_SELECT = [0x00, 0xA4, 0x04, 0x00, len(APPLET_AID)] + APPLET_AID
+
+
+APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
+print("Sending: %s" % toHexString(APDU_SELECT))
+response, sw1, sw2 = cardservice.connection.transmit(APDU_SELECT)
+response, sw1, sw2 = cardservice.connection.transmit(APDU_PIN)
+response, sw1, sw2 = cardservice.connection.transmit(APDU_HELLO)
+# print("%x %x %s" % (sw1, sw2, response))
+# GET_RESPONSE = [0XA0, 0XC0, 00, 00]
+# apdu = GET_RESPONSE + [sw2]
+# response, sw1, sw2 = cardservice.connection.transmit(apdu, CardConnection.T0_protocol )
+# print("%x %x %s" % (sw1, sw2, response))
 # from smartcard.System import readers
 # from smartcard.util import toHexString
 

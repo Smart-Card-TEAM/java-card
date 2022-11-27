@@ -1,10 +1,9 @@
 CC=javac
-
 FLAGS=-source 1.2 -target 1.1 -g -cp
-
 API_PATH=$(JC_HOME_TOOLS)/bin/api.jar
 APPLET_ID=0xa0:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1:0x2
 
+all: convert uninstall_applet install_applet
 
 convert: compile
 	java -classpath $(JC_HOME_TOOLS)/bin/converter.jar:. com.sun.javacard.converter.Converter -verbose -exportpath $(PWD)/smart_card/api_export_files:AppletJavaCard -classdir . -applet $(APPLET_ID) smart_card.AppletJavaCard smart_card 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
