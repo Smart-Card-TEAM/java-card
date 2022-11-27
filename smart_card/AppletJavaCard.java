@@ -63,7 +63,7 @@ public class AppletJavaCard extends Applet {
 
         // The installation parameters contain the PIN
         // initialization value
-        pin.update(new byte[]{0x00, 0x01, 0x02, 0x03}, (short)0, (byte)4);
+        pin.update(new byte[] { 0x00, 0x01, 0x02, 0x03 }, (short) 0, (byte) 4);
         register();
     }
 
