@@ -8,7 +8,7 @@ class PIN:
         self.APDU_SELECT = APDU_SELECT
         self.CLA = 0x80
         self.INS_AUTH = 0x20
-        self.INS_ACTIVATE = 0x01
+        self.INS_ACTIVATE = 0x04
         self.connection = connection
         print(self.connection)
 
