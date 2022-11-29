@@ -58,10 +58,6 @@ public class AppletJavaCard extends Applet {
         // The installation parameters contain the PIN
         // initialization value
         pin.update(new byte[]{0x00, 0x01, 0x02, 0x03}, (short) 0, (byte) 4);
-        // rsa_KeyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_512);
-        // rsa_KeyPair.genKeyPair();
-        // rsa_PublicKey = (RSAPublicKey) rsa_KeyPair.getPublic();
-        // rsa_PrivateCrtKey = (RSAPrivateCrtKey) rsa_KeyPair.getPrivate();
         m_privateKey
                 = (RSAPrivateKey) KeyBuilder.buildKey
                 (KeyBuilder.TYPE_RSA_PRIVATE,
@@ -100,7 +96,7 @@ public class AppletJavaCard extends Applet {
 
         apdu.setOutgoingAndSend((short) 0, length);
     }
-    
+
     public void signBuffer(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         short length = m_signature.sign(

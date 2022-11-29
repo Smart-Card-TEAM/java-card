@@ -4,7 +4,6 @@ from smartcard.CardConnection import CardConnection
 from smartcard.CardRequest import CardRequest
 from src import *
 
-
 APPLET = 0x80
 VERIFY = 0x20
 P1_INST_INST = 0x04
@@ -12,15 +11,6 @@ P1_INST_INST = 0x04
 INS_RSA_MODULUS = 0x01
 INS_RSA_EXPONENT = 0x02
 INS_RSA_SIGNATURE = 0x03
-pin = [0x00, 0x01, 0x02, 0x03]
-
-cardtype = AnyCardType()
-cardrequest = CardRequest(timeout=1, cardType=cardtype)
-cardservice = cardrequest.waitforcard()
-
-cardservice.connection.connect()
-# observer = ConsoleCardConnectionObserver()
-# cardservice.connection.addObserver(observer)
 
 APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
 APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
@@ -42,10 +32,9 @@ class SmartCard:
         self._connect()
 
     def _connect(self):
-        self.cardtype = AnyCardType()
-        self.observer = ConsoleCardConnectionObserver()
+        observer = ConsoleCardConnectionObserver()
         if self.debug:
-            self.connection.addObserver(self.observer)
+            self.connection.addObserver(observer)
         self.PIN = PIN(self.connection, APPLET_AID, APDU_SELECT)
 
     def verify(self):
@@ -101,6 +90,10 @@ class SmartCard:
 
 
 if __name__ == "__main__":
+    cardtype = AnyCardType()
+    cardrequest = CardRequest(timeout=1, cardType=cardtype)
+    cardservice = cardrequest.waitforcard()
+    cardservice.connection.connect()
     card = SmartCard(cardservice.connection, debug=True)
     card.select_applet()
     card.hello()
