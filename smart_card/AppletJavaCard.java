@@ -3,8 +3,6 @@ package smart_card;
 import javacard.framework.*;
 import javacard.security.*;
 
-import java.util.Objects;
-
 /**
  */
 public class AppletJavaCard extends Applet {
@@ -20,7 +18,7 @@ public class AppletJavaCard extends Applet {
     private static final byte HW_CLA = (byte) 0x80;
     private static final byte INS_HELLO = (byte) 0x00;
     // at first the card is unactivated, we will have to set up a pin to activate the card and go further1.
-    private static final byte INS_ACTIVATION = (byte) 0x04;
+
 
     final static byte PIN_TRY_LIMIT = (byte) 0x03;
     // maximum size PIN
@@ -46,10 +44,14 @@ public class AppletJavaCard extends Applet {
 
     Signature m_verify;
 
-    final static byte GETPUBLICKEYMod_ = (byte) 0x01;
-    final static byte GETPUBLICKEYExp_ = (byte) 0x02;
+    final static byte INS_MODULUS = (byte) 0x01;
+    final static byte INS_EXPONENT = (byte) 0x02;
 
     final static byte INS_SIGN = (byte) 0x03;
+    final static byte INS_ACTIVATION = (byte) 0x04;
+    final static byte INS_ECHO = (byte) 0x05;
+
+//    final static byte INS_RECEIVE_MESSAGE = (byte) 0x05;
 
     protected AppletJavaCard(byte[] bArray, short bOffset, byte bLength) {
         echoBytes = new byte[LENGTH_ECHO_BYTES];
@@ -99,6 +101,9 @@ public class AppletJavaCard extends Applet {
 
     public void signBuffer(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
+        byte byteRead = (byte) (apdu.setIncomingAndReceive());
+        byte[] signBuffer = new byte[40];
+
         short length = m_signature.sign(
                 helloWorld,
                 (short) 0,
@@ -112,7 +117,12 @@ public class AppletJavaCard extends Applet {
 //                buffer,
 //                (short) 0,
 //                length);
-        apdu.setOutgoingAndSend((short) 0, length);
+
+        Util.arrayCopyNonAtomic(buffer, (short) 0, signBuffer, (short) 0, length);
+//        apdu.setOutgoingAndSend((short) 0, length);
+        apdu.setOutgoing();
+        apdu.setOutgoingLength((short) (signBuffer.length + 2));
+        apdu.sendBytesLong(signBuffer, (short) 0, length);
     }
 
 
@@ -157,9 +167,22 @@ public class AppletJavaCard extends Applet {
         if (!pin.isValidated())
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
         byte[] buffer = apdu.getBuffer();
-        short numBytes = (short) helloWorld.length;
-        Util.arrayCopyNonAtomic(helloWorld, (short) 0, buffer, (short) 0, numBytes);
-        apdu.setOutgoingAndSend((short) 0, numBytes);
+        byte byteRead = (byte) (apdu.setIncomingAndReceive());
+        byte[] signBuffer = new byte[byteRead];
+        Util.arrayCopyNonAtomic(buffer, (short) ISO7816.OFFSET_CDATA, signBuffer, (short) 0, (short) signBuffer.length);
+//        short numBytes = (short) helloWorld.length;
+//        Util.arrayCopyNonAtomic(helloWorld, (short) 0, buffer, (short) 0, numBytes);
+        apdu.setOutgoingAndSend((short) 0, byteRead);
+    }
+
+    private void echoHelloWorld(APDU apdu) {
+        if (!pin.isValidated())
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+//        byte[] buffer = apdu.getBuffer();
+        byte byteRead = (byte) (apdu.setIncomingAndReceive());
+//        byte[] signBuffer = new byte[byteRead];
+//        Util.arrayCopyNonAtomic(buffer, (short) ISO7816.OFFSET_CDATA, signBuffer, (short) 0, (short) signBuffer.length);
+        apdu.setOutgoingAndSend((short) 0, byteRead);
     }
 
     private void verify(APDU apdu) {
@@ -207,15 +230,18 @@ public class AppletJavaCard extends Applet {
             case VERIFY:
                 verify(apdu);
                 break;
-            case GETPUBLICKEYMod_:
+            case INS_MODULUS:
                 exportPublicKeyModulusAPDU(apdu);
                 // getHelloWorld(apdu);
                 break;
-            case GETPUBLICKEYExp_:
+            case INS_EXPONENT:
                 exportPublicKeyExponentAPDU(apdu);
                 break;
             case INS_SIGN:
                 signBuffer(apdu);
+                break;
+            case INS_ECHO:
+                echoHelloWorld(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);

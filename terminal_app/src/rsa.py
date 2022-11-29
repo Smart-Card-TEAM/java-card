@@ -7,6 +7,7 @@ class RSAVerification:
     def __init__(self, n, e) -> None:
         key_params = (n, e)
         self.key = RSA.construct(key_params)
+        print(self.key.export_key())
 
     def verify(self, message: bytes, signature: bytes):
         h = SHA.new(message)

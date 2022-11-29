@@ -1,7 +1,7 @@
 
 from smartcard.CardType import AnyCardType
-from smartcard.CardConnection import CardConnection
 from smartcard.CardRequest import CardRequest
+from smartcard.CardConnection import CardConnection
 from src import *
 
 APPLET = 0x80
@@ -13,22 +13,24 @@ INS_RSA_EXPONENT = 0x02
 INS_RSA_SIGNATURE = 0x03
 
 APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
-APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
+APDU_HELLO = [APPLET, 0x00, 0x00, 0x00]
 APDU_PIN = [APPLET, VERIFY, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
 APDU_SELECT = [0x00, 0xA4, P1_INST_INST, 0x00, len(APPLET_AID)] + APPLET_AID
 
 APDU_RSA_MOD = [APPLET, INS_RSA_MODULUS, 0x00, 0x00, 0x00]
 APDU_RSA_EXPONENT = [APPLET, INS_RSA_EXPONENT, 0x00, 0x00, 0x00]
-APDU_SIGN = [APPLET, INS_RSA_SIGNATURE, 0x00, 0x00, 0x00]
+APDU_SIGN = [APPLET, INS_RSA_SIGNATURE, 0x00, 0x00]
+
+
 
 def start():
-    print("""   ___  ___  _   _  ___  _____   ___  ____________   _____  _____  _____  _____ 
+    print("""   ___  ___  _   _  ___  _____   ___  ____________   _____  _____  _____  _____
   |_  |/ _ \| | | |/ _ \/  __ \ / _ \ | ___ \  _  \ / __  \|  _  ||  _  ||  _  |
     | / /_\ \ | | / /_\ \ /  \// /_\ \| |_/ / | | | `' / /'| |/' || |/' || |/' |
     | |  _  | | | |  _  | |    |  _  ||    /| | | |   / /  |  /| ||  /| ||  /| |
 /\__/ / | | \ \_/ / | | | \__/\| | | || |\ \| |/ /  ./ /___\ |_/ /\ |_/ /\ |_/ /
-\____/\_| |_/\___/\_| |_/\____/\_| |_/\_| \_|___/   \_____/ \___/  \___/  \___/ 
-                                                                                
+\____/\_| |_/\___/\_| |_/\____/\_| |_/\_| \_|___/   \_____/ \___/  \___/  \___/
+
                                                                                 """)
 
 
@@ -53,8 +55,9 @@ class SmartCard:
         return self.PIN.inputPin()
 
     def send_apdu(self, apdu):
-        response, sw1, sw2 = self.connection.transmit(apdu)
+        response, sw1, sw2 = self.connection.transmit(apdu, CardConnection.T0_protocol)
         if sw1 == 0x61 or sw1 == 0x6C:
+            print("wait response")
             response, sw1, sw2 = self.get_response(apdu[1], sw2)
         return response, sw1, sw2
 
@@ -76,6 +79,11 @@ class SmartCard:
 
     def get_rsa_exponent(self):
         return self.send_apdu(APDU_RSA_EXPONENT)
+
+    # def send_message(self, message: str):
+
+    #     m = [int(x) for x inIGN)[0]) message.encode("utf-8")]
+    #     return self.send_apdu(APDU_HELLO + [len(m)] +  m)
 
     @property
     def rsa_key(self):
@@ -100,6 +108,9 @@ class SmartCard:
     def get_signature(self, message=None):
         return bytes(self.send_apdu(APDU_SIGN)[0])
 
+    # def get_signature(self, message=None):
+    #     m = [int(x) for x in message.encode("utf-8")]
+    #     return bytes(self.send_apdu(APDU_SIGN + [len(m)] +  m)[0])
 
 if __name__ == "__main__":
     start()
@@ -109,8 +120,11 @@ if __name__ == "__main__":
     cardservice.connection.connect()
     card = SmartCard(cardservice.connection, debug=True)
     card.select_applet()
-    card.hello()
+    # card.hello()
     card.verify()
-    card.hello()
-    card.verify_signature(b"Hello", card.get_signature())
+    # card.hello()
+    #card.send_message("Hello")
+    sig = card.get_signature(message="Hello")
+    print("sig:" , sig)
+    card.verify_signature(b"Hello", sig)
     card.change_pin()
