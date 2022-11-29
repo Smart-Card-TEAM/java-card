@@ -21,6 +21,18 @@ APDU_RSA_MOD = [APPLET, INS_RSA_MODULUS, 0x00, 0x00, 0x00]
 APDU_RSA_EXPONENT = [APPLET, INS_RSA_EXPONENT, 0x00, 0x00, 0x00]
 APDU_SIGN = [APPLET, INS_RSA_SIGNATURE, 0x00, 0x00, 0x00]
 
+def start():
+    print("""   ___  ___  _   _  ___  _____   ___  ____________   _____  _____  _____  _____ 
+  |_  |/ _ \| | | |/ _ \/  __ \ / _ \ | ___ \  _  \ / __  \|  _  ||  _  ||  _  |
+    | / /_\ \ | | / /_\ \ /  \// /_\ \| |_/ / | | | `' / /'| |/' || |/' || |/' |
+    | |  _  | | | |  _  | |    |  _  ||    /| | | |   / /  |  /| ||  /| ||  /| |
+/\__/ / | | \ \_/ / | | | \__/\| | | || |\ \| |/ /  ./ /___\ |_/ /\ |_/ /\ |_/ /
+\____/\_| |_/\___/\_| |_/\____/\_| |_/\_| \_|___/   \_____/ \___/  \___/  \___/ 
+                                                                                
+                                                                                """)
+
+
+
 
 class SmartCard:
     def __init__(self, connection, debug=False):
@@ -90,6 +102,7 @@ class SmartCard:
 
 
 if __name__ == "__main__":
+    start()
     cardtype = AnyCardType()
     cardrequest = CardRequest(timeout=1, cardType=cardtype)
     cardservice = cardrequest.waitforcard()
