@@ -106,7 +106,7 @@ public class AppletJavaCard extends Applet {
     /**
      * Processes an incoming APDU.
      *
-     * @param apdu the incoming APDU
+     * @param apdu the incoming APDU82
      * @throws ISOException with the response bytes per ISO 7816-4
      * @see APDU
      */
