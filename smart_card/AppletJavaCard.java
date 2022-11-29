@@ -100,52 +100,25 @@ public class AppletJavaCard extends Applet {
 
         apdu.setOutgoingAndSend((short) 0, length);
     }
-
-    private void getPublicKeyMod(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-
-        short length = m_publicKey.getModulus(buffer, ISO7816.OFFSET_CDATA);
-        apdu.setOutgoing();
-        apdu.setOutgoingLength((short) length);
-        apdu.sendBytesLong(buffer, ISO7816.OFFSET_CDATA, (short) length);
-    }
-
+    
     public void signBuffer(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-//        byte[] bufferSign = new byte[5];
         short length = m_signature.sign(
                 helloWorld,
                 (short) 0,
                 (short) helloWorld.length,
                 buffer,
                 (short) 0) ;
-        boolean verif = m_verify.verify(
-                helloWorld,
-                (short) 0,
-                (short) helloWorld.length,
-                buffer,
-                (short) 0,
-                length);
-//        if (verif) {
-//            getHelloWorld(apdu);
-//        } else {
-//            ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
-//        }
-//        apdu.setOutgoing();
-//        apdu.setOutgoingLength((short) buffer.length);
-//        apdu.sendBytesLong(buffer, ISO7816.OFFSET_CDATA, (short) buffer.length);
-//        Util.arrayCopyNonAtomic(bufferSign, (short) 0, buffer, (short) 0, length);
+//        boolean verif = m_verify.verify(
+//                helloWorld,
+//                (short) 0,
+//                (short) helloWorld.length,
+//                buffer,
+//                (short) 0,
+//                length);
         apdu.setOutgoingAndSend((short) 0, length);
-//        apdu.setOutgoingAndSend((short) 0, (short) buffer.length);
     }
-//    private void getPublicKeyExp(APDU apdu) {
-//        byte[] buffer = apdu.getBuffer();
-//        m_privateKey.getExponent(buffer, ISO7816.OFFSET_CDATA);
-//        apdu.setOutgoing();
-//        apdu.setOutgoingLength((short) 4);
-//        apdu.sendBytesLong(buffer, (short) ISO7816.OFFSET_CDATA, (short) 4);
-//
-//    }
+
 
     /**
      * Installs this applet.
