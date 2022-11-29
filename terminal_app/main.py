@@ -30,9 +30,9 @@ cardservice.connection.connect()
 # cardservice.connection.addObserver(observer)
 
 APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
+APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
 APDU_PIN = [APPLET, VERIFY, 0x00, 0x00, 0x04, 0x00, 0x01, 0x02, 0x03]
 APDU_SELECT = [0x00, 0xA4, 0x04, 0x00, len(APPLET_AID)] + APPLET_AID
-APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x05]
 
 
 APDU_RSA_MOD = [APPLET, 0x01, 0x00, 0x00, 0x00]
@@ -40,7 +40,6 @@ APDU_RSA_EXPONENT = [APPLET, 0x02, 0x00, 0x00, 0x00]
 APDU_SIGN = [APPLET, 0x03, 0x00, 0x00, 0x3B]
 
 
-APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x05]
 """
 response, sw1, sw2 = cardservice.connection.transmit(APDU_SELECT)
 response, sw1, sw2 = cardservice.connection.transmit(APDU_PIN)
@@ -118,7 +117,7 @@ class SmartCard:
 
 if __name__ == "__main__":
     card = SmartCard(cardservice.connection,debug=True)
-    card.hello()
+    # card.hello()
     card.verify()
-    card.hello()
+    # card.hello()
     card.change_pin()
