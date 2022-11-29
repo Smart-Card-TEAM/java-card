@@ -1,32 +1,3 @@
-/*
-* $Workfile: HelloWorld.java $	$Revision: 17 $, $Date: 5/02/00 9:05p $
-*
-* Copyright (c) 1999 Sun Microsystems, Inc. All Rights Reserved.
-*
-* This software is the confidential and proprietary information of Sun
-* Microsystems, Inc. ("Confidential Information").  You shall not
-* disclose such Confidential Information and shall use it only in
-* accordance with the terms of the license agreement you entered into
-* with Sun.
-*
-* SUN MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF THE
-* SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-* PURPOSE, OR NON-INFRINGEMENT. SUN SHALL NOT BE LIABLE FOR ANY DAMAGES
-* SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR DISTRIBUTING
-* THIS SOFTWARE OR ITS DERIVATIVES.
-*/
-
-// /*
-// $Workfile: HelloWorld.java $
-// $Revision: 17 $
-// $Date: 5/02/00 9:05p $
-// $Author: Akuzmin $
-// $Archive: /Products/Europa/samples/com/sun/javacard/samples/HelloWorld/HelloWorld.java $
-// $Modtime: 5/02/00 7:18p $
-// Original author:  Mitch Butler
-// */
-
 package smart_card;
 
 import javacard.framework.*;
@@ -39,6 +10,7 @@ import java.util.Objects;
 public class AppletJavaCard extends Applet {
     private byte[] echoBytes;
     private static final short LENGTH_ECHO_BYTES = 256;
+    private boolean ACTIVATED = true;
 
     /**
      * Only this class's install method should create the applet object.
@@ -47,6 +19,8 @@ public class AppletJavaCard extends Applet {
     private static final byte[] helloWorld = {'H', 'e', 'l', 'l', 'o'};
     private static final byte HW_CLA = (byte) 0x80;
     private static final byte INS_HELLO = (byte) 0x00;
+    // at first the card is unactivated, we will have to set up a pin to activate the card and go further1.
+    private static final byte INS_ACTIVATION = (byte) 0x04;
 
     final static byte PIN_TRY_LIMIT = (byte) 0x03;
     // maximum size PIN
@@ -195,12 +169,19 @@ public class AppletJavaCard extends Applet {
 
         // The applet declines to be selected
         // if the pin is blocked.
-        if (pin.getTriesRemaining() == 0) {
-            return false;
-        }
-        return true;
+        return pin.getTriesRemaining() != 0;
 
     }// end of select method
+
+    private void activate(APDU apdu) {
+        if (!pin.isValidated())
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+        byte[] buffer = apdu.getBuffer();
+        byte byteRead = (byte) (apdu.setIncomingAndReceive());
+        byte[] Newpin = new byte[buffer[ISO7816.OFFSET_CDATA]];
+        ACTIVATED = true;
+        pin.update(buffer, ISO7816.OFFSET_CDATA, byteRead);
+    }
 
 
     private void getHelloWorld(APDU apdu) {
@@ -222,8 +203,8 @@ public class AppletJavaCard extends Applet {
         // the PIN data is read into the APDU buffer
         // at the offset ISO7816.OFFSET_CDATA
         // the PIN data length = byteRead
-        if (pin.check(buffer, ISO7816.OFFSET_CDATA,
-                byteRead) == false)
+        if (!pin.check(buffer, ISO7816.OFFSET_CDATA,
+                byteRead))
             ISOException.throwIt(SW_VERIFICATION_FAILED);
 
     }
@@ -251,6 +232,9 @@ public class AppletJavaCard extends Applet {
                 getHelloWorld(apdu);
                 // getPublicKeyMod(apdu);
                 break;
+            case INS_ACTIVATION:
+                activate(apdu);
+                break;
             case VERIFY:
                 verify(apdu);
                 break;
@@ -267,6 +251,8 @@ public class AppletJavaCard extends Applet {
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
+
     }
+
 
 }
