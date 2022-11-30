@@ -39,8 +39,6 @@ def start():
                                                                                 """)
 
 
-
-
 class SmartCard:
     def __init__(self, connection, debug=False):
         self.connection = connection
@@ -124,7 +122,8 @@ class SmartCard:
         return response
 
     def sign_message_registered(self):
-        self.last_signed_message = bytes(self.send_apdu(APDU_SEND_REGISTERED)[0])
+        self.last_signed_message = bytes(
+            self.send_apdu(APDU_SEND_REGISTERED)[0])
         return self.last_signed_message
 
     def interactive_shell(self) -> None:
@@ -135,7 +134,8 @@ class SmartCard:
             print("2 - Get RSA modulus")
             print("3 - Get RSA exponent")
             print("4 - Get RSA public key")
-            print("5 - Verify signature {}".format("(Last signature: " + self.last_signed_message.hex() + ")" if self.last_signed_message is not None else "(No message have been signed yet)"))
+            print("5 - Verify signature {}".format("(Last signature: " + self.last_signed_message.hex() +
+                  ")" if self.last_signed_message is not None else "(No message have been signed yet)"))
             print("6 - Sign message")
             print("0 - Exit")
             choice = input("Your choice : ")
@@ -156,12 +156,14 @@ class SmartCard:
                 message = input("Message : ")
                 self.register_message(message)
                 self.sign_message_registered()
-                print("Signature from SmartCard: ", self.last_signed_message.hex())
-                
+                print("Signature from SmartCard: ",
+                      self.last_signed_message.hex())
+
             elif choice == "0":
                 break
             else:
                 print("Invalid choice")
+
 
 if __name__ == "__main__":
     start()

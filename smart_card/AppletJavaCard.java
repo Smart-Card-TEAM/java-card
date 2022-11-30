@@ -17,7 +17,8 @@ public class AppletJavaCard extends Applet {
 
     private static byte[] currentMessageToSign;
     private static final byte CLA = (byte) 0x80;
-    // at first the card is unactivated, we will have to set up a pin to activate the card and go further1.
+    // at first the card is unactivated, we will have to set up a pin to activate
+    // the card and go further1.
     private static final byte INS_ACTIVATION = (byte) 0x04;
 
     final static byte PIN_TRY_LIMIT = (byte) 0x03;
@@ -54,29 +55,18 @@ public class AppletJavaCard extends Applet {
 
         // The installation parameters contain the PIN
         // initialization value
-        pin.update(new byte[]{0x00, 0x01, 0x02, 0x03}, (short) 0, (byte) 4);
-        m_privateKey
-                = (RSAPrivateKey) KeyBuilder.buildKey
-                (KeyBuilder.TYPE_RSA_PRIVATE,
-                        KeyBuilder.LENGTH_RSA_512,false);
-        m_publicKey
-                = (RSAPublicKey) KeyBuilder.buildKey
-                (KeyBuilder.TYPE_RSA_PUBLIC,
-                        KeyBuilder.LENGTH_RSA_512,true);
-        m_keyPair
-                = new KeyPair
-                (KeyPair.ALG_RSA_CRT, (short)
-                        m_publicKey.getSize());
+        pin.update(new byte[] { 0x00, 0x01, 0x02, 0x03 }, (short) 0, (byte) 4);
+        m_privateKey = (RSAPrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE,
+                KeyBuilder.LENGTH_RSA_512, false);
+        m_publicKey = (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC,
+                KeyBuilder.LENGTH_RSA_512, true);
+        m_keyPair = new KeyPair(KeyPair.ALG_RSA_CRT, (short) m_publicKey.getSize());
         m_keyPair.genKeyPair();
-        m_publicKey
-                = (RSAPublicKey) m_keyPair.getPublic();
-        m_privateKey
-                = (RSAPrivateKey) m_keyPair.getPrivate();
-        m_signature = Signature.getInstance
-                (Signature.ALG_RSA_SHA_PKCS1, false);
+        m_publicKey = (RSAPublicKey) m_keyPair.getPublic();
+        m_privateKey = (RSAPrivateKey) m_keyPair.getPrivate();
+        m_signature = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
         m_signature.init(m_privateKey, Signature.MODE_SIGN);
-        m_verify = Signature.getInstance
-                (Signature.ALG_RSA_SHA_PKCS1, false);
+        m_verify = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
         m_verify.init(m_publicKey, Signature.MODE_VERIFY);
         register(bArray, (short) (bOffset + 1), bArray[bOffset]);
     }
@@ -127,7 +117,6 @@ public class AppletJavaCard extends Applet {
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
-
     private void getMessageToSign(APDU apdu) {
         if (!pin.isValidated())
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
@@ -173,11 +162,10 @@ public class AppletJavaCard extends Applet {
                 (short) 0,
                 (short) numBytes,
                 buffer,
-                (short) 0) ;
+                (short) 0);
 
         apdu.setOutgoingAndSend((short) 0, length);
     }
-
 
     private void verify(APDU apdu) {
 
@@ -240,6 +228,5 @@ public class AppletJavaCard extends Applet {
         }
 
     }
-
 
 }

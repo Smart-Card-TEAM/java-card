@@ -1,8 +1,5 @@
-class PINVerification:
-    pass
-
 class PIN:
-    def __init__(self,connection,AID,APDU_SELECT):
+    def __init__(self, connection, AID, APDU_SELECT):
         self.tries_left = 3
         self.AID = AID
         self.APDU_SELECT = APDU_SELECT
@@ -19,7 +16,7 @@ class PIN:
             print("PIN must be numeric")
             return False
         adpu = [self.CLA, self.INS_AUTH, 0x00, 0x00, len(pin)] + pin
-        response, sw1 , sw2 = self.connection.transmit(self.APDU_SELECT)
+        response, sw1, sw2 = self.connection.transmit(self.APDU_SELECT)
         data, sw1, sw2 = self.connection.transmit(adpu)
         if sw1 == 0x90 and sw2 == 0x00:
             return True
@@ -38,17 +35,18 @@ class PIN:
             if not verify:
                 print("Wrong PIN, %d tries left" % self.tries_left)
             if self.tries_left == 0:
-                print ("No more tries left, card blocked")
+                print("No more tries left, card blocked")
                 return False
         return verify
 
-    def sendAPDUChangePin(self,new_pin):
+    def sendAPDUChangePin(self, new_pin):
         try:
             new_pin = [int(x) for x in new_pin]
         except:
             print("PIN must be numeric")
             return False
-        adpu = [self.CLA, self.INS_ACTIVATE, 0x00, 0x00, len(new_pin)] + new_pin
+        adpu = [self.CLA, self.INS_ACTIVATE,
+                0x00, 0x00, len(new_pin)] + new_pin
         data, sw1, sw2 = self.connection.transmit(adpu)
         if sw1 == 0x90 and sw2 == 0x00:
             return True
@@ -67,5 +65,5 @@ class PIN:
             if not changed:
                 print("Wrong PIN, %d tries left" % self.tries_left)
             if self.tries_left == 0:
-                print ("No more tries left, card blocked")
+                print("No more tries left, card blocked")
                 return False
