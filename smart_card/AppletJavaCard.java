@@ -10,15 +10,13 @@ import java.util.Objects;
 public class AppletJavaCard extends Applet {
     private byte[] echoBytes;
     private static final short LENGTH_ECHO_BYTES = 256;
-    private boolean ACTIVATED = true;
 
     /**
      * Only this class's install method should create the applet object.
      */
 
-    private static final byte[] helloWorld = {'H', 'e', 'l', 'l', 'o'};
-    private static final byte HW_CLA = (byte) 0x80;
-    private static final byte INS_HELLO = (byte) 0x00;
+    private static byte[] currentMessageToSign;
+    private static final byte CLA = (byte) 0x80;
     // at first the card is unactivated, we will have to set up a pin to activate the card and go further1.
     private static final byte INS_ACTIVATION = (byte) 0x04;
 
@@ -31,14 +29,10 @@ public class AppletJavaCard extends Applet {
     // for a credit or a debit transaction
     final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
     OwnerPIN pin;
-    final static byte VERIFY = (byte) 0x20;
+    final static byte INS_VERIFY = (byte) 0x20;
 
     final static byte INS_GET_PUBLIC_KEY = (byte) 0x01;
 
-
-    // RSAPrivateCrtKey rsa_PrivateCrtKey;
-    // RSAPublicKey rsa_PublicKey;
-    // KeyPair rsa_KeyPair;
     RSAPublicKey m_publicKey;
     RSAPrivateKey m_privateKey;
     KeyPair m_keyPair;
@@ -46,10 +40,13 @@ public class AppletJavaCard extends Applet {
 
     Signature m_verify;
 
-    final static byte GETPUBLICKEYMod_ = (byte) 0x01;
-    final static byte GETPUBLICKEYExp_ = (byte) 0x02;
+    final static byte INS_MODULUS = (byte) 0x01;
+    final static byte INS_EXPONENT = (byte) 0x02;
 
     final static byte INS_SIGN = (byte) 0x03;
+    final static byte ECHO_MESSAGE = (byte) 0x05;
+    final static byte REGISTER_MESSAGE = (byte) 0x06;
+    final static byte INS_SEND_REGISTERED_MESSAGE = (byte) 0x07;
 
     protected AppletJavaCard(byte[] bArray, short bOffset, byte bLength) {
         echoBytes = new byte[LENGTH_ECHO_BYTES];
@@ -84,38 +81,6 @@ public class AppletJavaCard extends Applet {
         register(bArray, (short) (bOffset + 1), bArray[bOffset]);
     }
 
-    public void exportPublicKeyExponentAPDU(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-        short length = m_publicKey.getExponent(buffer, (short) 0);
-        apdu.setOutgoingAndSend((short) 0, length);
-    }
-
-    public void exportPublicKeyModulusAPDU(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-        short length = m_publicKey.getModulus(buffer, (short) 0);
-
-        apdu.setOutgoingAndSend((short) 0, length);
-    }
-
-    public void signBuffer(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-        short length = m_signature.sign(
-                helloWorld,
-                (short) 0,
-                (short) helloWorld.length,
-                buffer,
-                (short) 0) ;
-//        boolean verif = m_verify.verify(
-//                helloWorld,
-//                (short) 0,
-//                (short) helloWorld.length,
-//                buffer,
-//                (short) 0,
-//                length);
-        apdu.setOutgoingAndSend((short) 0, length);
-    }
-
-
     /**
      * Installs this applet.
      *
@@ -128,7 +93,6 @@ public class AppletJavaCard extends Applet {
     }
 
     public void deselect() {
-
         // reset the pin value
         pin.reset();
 
@@ -147,20 +111,73 @@ public class AppletJavaCard extends Applet {
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
         byte[] buffer = apdu.getBuffer();
         byte byteRead = (byte) (apdu.setIncomingAndReceive());
-        byte[] Newpin = new byte[buffer[ISO7816.OFFSET_CDATA]];
-        ACTIVATED = true;
         pin.update(buffer, ISO7816.OFFSET_CDATA, byteRead);
     }
 
+    public void exportPublicKeyExponentAPDU(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        short length = m_publicKey.getExponent(buffer, (short) 0);
+        apdu.setOutgoingAndSend((short) 0, length);
+    }
 
-    private void getHelloWorld(APDU apdu) {
+    public void exportPublicKeyModulusAPDU(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        short length = m_publicKey.getModulus(buffer, (short) 0);
+
+        apdu.setOutgoingAndSend((short) 0, length);
+    }
+
+
+    private void getMessageToSign(APDU apdu) {
         if (!pin.isValidated())
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-        byte[] buffer = apdu.getBuffer();
-        short numBytes = (short) helloWorld.length;
-        Util.arrayCopyNonAtomic(helloWorld, (short) 0, buffer, (short) 0, numBytes);
-        apdu.setOutgoingAndSend((short) 0, numBytes);
+
+        byte buffer[] = apdu.getBuffer();
+
+        short bytesRead = apdu.setIncomingAndReceive();
+        short echoOffset = (short) 0;
+
+        while (bytesRead > 0) {
+            Util.arrayCopyNonAtomic(buffer, ISO7816.OFFSET_CDATA, echoBytes, echoOffset, bytesRead);
+            echoOffset += bytesRead;
+            bytesRead = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
+        }
+
+        apdu.setOutgoing();
+        apdu.setOutgoingLength(echoOffset);
+        // echo data
+        apdu.sendBytesLong(echoBytes, (short) 0, echoOffset);
     }
+
+    private void registerMessageToSign(APDU apdu) {
+        if (!pin.isValidated())
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+
+        byte[] buffer = apdu.getBuffer();
+        byte byteRead = (byte) (apdu.setIncomingAndReceive());
+        byte[] message = new byte[byteRead];
+        Util.arrayCopyNonAtomic(buffer, ISO7816.OFFSET_CDATA, message, (short) 0, byteRead);
+        currentMessageToSign = message;
+    }
+
+    private void sendSignedRegisteredMessage(APDU apdu) {
+        if (!pin.isValidated())
+            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
+
+        byte[] buffer = apdu.getBuffer();
+        short numBytes = (short) currentMessageToSign.length;
+        Util.arrayCopyNonAtomic(currentMessageToSign, (short) 0, buffer, (short) 0, numBytes);
+
+        short length = m_signature.sign(
+                currentMessageToSign,
+                (short) 0,
+                (short) numBytes,
+                buffer,
+                (short) 0) ;
+
+        apdu.setOutgoingAndSend((short) 0, length);
+    }
+
 
     private void verify(APDU apdu) {
 
@@ -193,29 +210,30 @@ public class AppletJavaCard extends Applet {
         byte CLA = buffer[ISO7816.OFFSET_CLA];
         byte INS = buffer[ISO7816.OFFSET_INS];
 
-        if (CLA != HW_CLA) {
+        if (CLA != CLA) {
             ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
         }
         switch (INS) {
-            case INS_HELLO:
-                getHelloWorld(apdu);
-                // getPublicKeyMod(apdu);
-                break;
             case INS_ACTIVATION:
                 activate(apdu);
                 break;
-            case VERIFY:
+            case INS_VERIFY:
                 verify(apdu);
                 break;
-            case GETPUBLICKEYMod_:
+            case INS_MODULUS:
                 exportPublicKeyModulusAPDU(apdu);
-                // getHelloWorld(apdu);
                 break;
-            case GETPUBLICKEYExp_:
+            case ECHO_MESSAGE:
+                getMessageToSign(apdu);
+                break;
+            case REGISTER_MESSAGE:
+                registerMessageToSign(apdu);
+                break;
+            case INS_SEND_REGISTERED_MESSAGE:
+                sendSignedRegisteredMessage(apdu);
+                break;
+            case INS_EXPONENT:
                 exportPublicKeyExponentAPDU(apdu);
-                break;
-            case INS_SIGN:
-                signBuffer(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);

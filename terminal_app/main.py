@@ -11,6 +11,9 @@ P1_INST_INST = 0x04
 INS_RSA_MODULUS = 0x01
 INS_RSA_EXPONENT = 0x02
 INS_RSA_SIGNATURE = 0x03
+INS_ECHO_MESSAGE = 0x05
+INS_REGISTER_MESSAGE = 0x06
+INS_SEND_REGISTERED_MESSAGE = 0x07
 
 APPLET_AID = [0xA0, 0x00, 0x00, 0x00, 0x62, 0x03, 0x01, 0x0C, 0x06, 0x01, 0x02]
 APDU_HELLO = [APPLET, 0x00, 0x00, 0x00, 0x00]
@@ -20,15 +23,19 @@ APDU_SELECT = [0x00, 0xA4, P1_INST_INST, 0x00, len(APPLET_AID)] + APPLET_AID
 APDU_RSA_MOD = [APPLET, INS_RSA_MODULUS, 0x00, 0x00, 0x00]
 APDU_RSA_EXPONENT = [APPLET, INS_RSA_EXPONENT, 0x00, 0x00, 0x00]
 APDU_SIGN = [APPLET, INS_RSA_SIGNATURE, 0x00, 0x00, 0x00]
+APDU_ECHO = [APPLET, INS_ECHO_MESSAGE, 0x00, 0x00]
+APDU_REGISTER = [APPLET, INS_REGISTER_MESSAGE, 0x00, 0x00]
+APDU_SEND_REGISTERED = [APPLET, INS_SEND_REGISTERED_MESSAGE, 0x00, 0x00, 0x00]
+
 
 def start():
-    print("""   ___  ___  _   _  ___  _____   ___  ____________   _____  _____  _____  _____ 
+    print("""   ___  ___  _   _  ___  _____   ___  ____________   _____  _____  _____  _____
   |_  |/ _ \| | | |/ _ \/  __ \ / _ \ | ___ \  _  \ / __  \|  _  ||  _  ||  _  |
     | / /_\ \ | | / /_\ \ /  \// /_\ \| |_/ / | | | `' / /'| |/' || |/' || |/' |
     | |  _  | | | |  _  | |    |  _  ||    /| | | |   / /  |  /| ||  /| ||  /| |
 /\__/ / | | \ \_/ / | | | \__/\| | | || |\ \| |/ /  ./ /___\ |_/ /\ |_/ /\ |_/ /
-\____/\_| |_/\___/\_| |_/\____/\_| |_/\_| \_|___/   \_____/ \___/  \___/  \___/ 
-                                                                                
+\____/\_| |_/\___/\_| |_/\____/\_| |_/\_| \_|___/   \_____/ \___/  \___/  \___/
+
                                                                                 """)
 
 
@@ -41,6 +48,7 @@ class SmartCard:
         self.debug = debug
         self.verified = False
         self._rsa_key: RSAVerification = None
+        self.last_signed_message = None
         self._connect()
 
     def _connect(self):
@@ -69,17 +77,26 @@ class SmartCard:
 
     def get_response(self, ins, sw2):
         GET_RESPONSE = [0X80, ins, 0x00, 0x00]
-        return self.send_apdu(GET_RESPONSE + [sw2])
+        return self.connection.transmit(GET_RESPONSE + [sw2])
+
+    def get_n(self):
+        return self.rsa_key.key.n
+
+    def get_e(self):
+        return self.rsa_key.key.e
 
     def get_rsa_mod(self):
-        return self.send_apdu(APDU_RSA_MOD)
+        response, _, _ = self.send_apdu(APDU_RSA_MOD)
+        return response
 
     def get_rsa_exponent(self):
-        return self.send_apdu(APDU_RSA_EXPONENT)
+        response, _, _ = self.send_apdu(APDU_RSA_EXPONENT)
+        return response
 
     @property
     def rsa_key(self):
         if self._rsa_key is None:
+            print("No public key loaded, asking for RSA public key to SmartCard...")
             self._rsa_key = self.ask_rsa_public_key()
         return self._rsa_key
 
@@ -88,18 +105,63 @@ class SmartCard:
         self._rsa_key = self.ask_rsa_public_key()
 
     def ask_rsa_public_key(self):
-        response, _, _ = self.get_rsa_mod()
+        response = self.get_rsa_mod()
         n = int.from_bytes(bytes(response), byteorder='big')
-        response, _, _ = self.get_rsa_exponent()
+        response = self.get_rsa_exponent()
         e = int.from_bytes(bytes(response), byteorder='big')
         return RSAVerification(n, e)
 
-    def verify_signature(self, message: bytes, signature: bytes):
-        return self.rsa_key.verify(message, signature)
+    def verify_signature(self, message: bytes):
+        if self.last_signed_message is None:
+            print("No message signed")
+            return False
+        return self.rsa_key.verify(message, self.last_signed_message)
 
-    def get_signature(self, message=None):
-        return bytes(self.send_apdu(APDU_SIGN)[0])
+    def register_message(self, message=None):
+        m_bytes = [int(x) for x in message.encode("utf-8")]
+        apdu = (APDU_REGISTER + [len(m_bytes)] + m_bytes)
+        response, _, _ = self.connection.transmit(apdu)
+        return response
 
+    def sign_message_registered(self):
+        self.last_signed_message = bytes(self.send_apdu(APDU_SEND_REGISTERED)[0])
+        return self.last_signed_message
+
+    def interactive_shell(self) -> None:
+        self.select_applet()
+        self.verify()
+        while True:
+            print("1 - Change PIN")
+            print("2 - Get RSA modulus")
+            print("3 - Get RSA exponent")
+            print("4 - Get RSA public key")
+            print("5 - Verify signature {}".format("(Last signature: " + self.last_signed_message.hex() + ")" if self.last_signed_message is not None else "(No message have been signed yet)"))
+            print("6 - Sign message")
+            print("0 - Exit")
+            choice = input("Your choice : ")
+            if choice == "1":
+                self.change_pin()
+                self.verify()
+            elif choice == "2":
+                print("n :", self.get_n())
+            elif choice == "3":
+                print("e: ", self.get_e())
+            elif choice == "4":
+                print(self.rsa_key.key.export_key())
+            elif choice == "5":
+                message = input("Message : ")
+                print(f"Check {message} signature")
+                print(self.verify_signature(message.encode("utf-8")))
+            elif choice == "6":
+                message = input("Message : ")
+                self.register_message(message)
+                self.sign_message_registered()
+                print("Signature from SmartCard: ", self.last_signed_message.hex())
+                
+            elif choice == "0":
+                break
+            else:
+                print("Invalid choice")
 
 if __name__ == "__main__":
     start()
@@ -107,10 +169,6 @@ if __name__ == "__main__":
     cardrequest = CardRequest(timeout=1, cardType=cardtype)
     cardservice = cardrequest.waitforcard()
     cardservice.connection.connect()
-    card = SmartCard(cardservice.connection, debug=True)
-    card.select_applet()
-    card.hello()
-    card.verify()
-    card.hello()
-    card.verify_signature(b"Hello", card.get_signature())
-    card.change_pin()
+    card = SmartCard(cardservice.connection)
+    card.interactive_shell()
+    cardservice.connection.disconnect()
