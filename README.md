@@ -57,6 +57,6 @@ make uninstall_applet
 
 ![Welcome](./screenshots/welcome.png)
 
-![Sign and Verify](./screenshots/sign_verify.png)
+![Sign and Verify](./screenshots/sign_and_verify.png)
 
 ![Public Key](./screenshots/public_key.png)
