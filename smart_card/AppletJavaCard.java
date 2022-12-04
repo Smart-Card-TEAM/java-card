@@ -8,7 +8,6 @@ import java.util.Objects;
 /**
  */
 public class AppletJavaCard extends Applet {
-    private byte[] echoBytes;
     private static final short LENGTH_ECHO_BYTES = 256;
 
     /**
@@ -16,7 +15,6 @@ public class AppletJavaCard extends Applet {
      */
 
     private static byte[] currentMessageToSign;
-    private static final byte CLA = (byte) 0x80;
     // at first the card is unactivated, we will have to set up a pin to activate
     // the card and go further1.
     private static final byte INS_ACTIVATION = (byte) 0x04;
@@ -31,9 +29,6 @@ public class AppletJavaCard extends Applet {
     final static short SW_PIN_VERIFICATION_REQUIRED = 0x6301;
     OwnerPIN pin;
     final static byte INS_VERIFY = (byte) 0x20;
-
-    final static byte INS_GET_PUBLIC_KEY = (byte) 0x01;
-
     RSAPublicKey m_publicKey;
     RSAPrivateKey m_privateKey;
     KeyPair m_keyPair;
@@ -43,14 +38,10 @@ public class AppletJavaCard extends Applet {
 
     final static byte INS_MODULUS = (byte) 0x01;
     final static byte INS_EXPONENT = (byte) 0x02;
-
-    final static byte INS_SIGN = (byte) 0x03;
-    final static byte ECHO_MESSAGE = (byte) 0x05;
     final static byte REGISTER_MESSAGE = (byte) 0x06;
     final static byte INS_SEND_REGISTERED_MESSAGE = (byte) 0x07;
 
     protected AppletJavaCard(byte[] bArray, short bOffset, byte bLength) {
-        echoBytes = new byte[LENGTH_ECHO_BYTES];
         pin = new OwnerPIN(PIN_TRY_LIMIT, MAX_PIN_SIZE);
 
         // The installation parameters contain the PIN
