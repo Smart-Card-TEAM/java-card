@@ -1,3 +1,7 @@
+import logging
+import sys
+
+
 class PIN:
     def __init__(self, connection, AID, APDU_SELECT):
         self.tries_left = 3
@@ -12,12 +16,15 @@ class PIN:
         try:
             pin = [int(x) for x in pin]
         except:
-            print("PIN must be numeric")
+            logging.info("PIN must be numeric")
             return False
-        adpu = [self.CLA, self.INS_AUTH, 0x00, 0x00, len(pin)] + pin
+        APDU = [self.CLA, self.INS_AUTH, 0x00, 0x00, len(pin)] + pin
         response, sw1, sw2 = self.connection.transmit(self.APDU_SELECT)
-        data, sw1, sw2 = self.connection.transmit(adpu)
-        if sw1 == 0x90 and sw2 == 0x00:
+        data, sw1, sw2 = self.connection.transmit(APDU)
+        if sw1 == 0x67 and sw2 == 0x00:
+            logging.info("Card blocked because of too many wrong PINs")
+            sys.exit(1)
+        elif sw1 == 0x90 and sw2 == 0x00:
             return True
         else:
             self.tries_left -= 1
@@ -28,13 +35,13 @@ class PIN:
         while not verify:
             pin = input("Enter PIN: ")
             if len(pin) < 4 or len(pin) > 8:
-                print("PIN must be between 4 and 8 digits")
+                logging.info("PIN must be between 4 and 8 digits")
                 continue
             verify = self.verify(pin)
             if not verify:
-                print("Wrong PIN, %d tries left" % self.tries_left)
+                logging.info("Wrong PIN, %d tries left" % self.tries_left)
             if self.tries_left == 0:
-                print("No more tries left, card blocked")
+                logging.info("No more tries left, card blocked")
                 return False
         return verify
 
@@ -42,7 +49,7 @@ class PIN:
         try:
             new_pin = [int(x) for x in new_pin]
         except:
-            print("PIN must be numeric")
+            logging.info("PIN must be numeric")
             return False
         APDU = [self.CLA, self.INS_ACTIVATE,
                 0x00, 0x00, len(new_pin)] + new_pin
@@ -58,11 +65,11 @@ class PIN:
         while not changed:
             pin = input("Enter new PIN: ")
             if len(pin) < 4 or len(pin) > 8:
-                print("PIN must be between 4 and 8 digits")
+                logging.info("PIN must be between 4 and 8 digits")
                 continue
             changed = self.sendAPDUChangePin(pin)
             if not changed:
-                print("Wrong PIN, %d tries left" % self.tries_left)
+                logging.info("Wrong PIN, %d tries left" % self.tries_left)
             if self.tries_left == 0:
-                print("No more tries left, card blocked")
+                logging.info("No more tries left, card blocked")
                 return False

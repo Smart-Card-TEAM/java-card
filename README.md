@@ -60,3 +60,5 @@ make uninstall_applet
 ![Sign and Verify](./screenshots/sign_and_verify.png)
 
 ![Public Key](./screenshots/public_key.png)
+
+![Card blocked](./screenshots/card_blocked_pin.png)

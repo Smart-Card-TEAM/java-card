@@ -117,27 +117,6 @@ public class AppletJavaCard extends Applet {
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
-    private void getMessageToSign(APDU apdu) {
-        if (!pin.isValidated())
-            ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);
-
-        byte buffer[] = apdu.getBuffer();
-
-        short bytesRead = apdu.setIncomingAndReceive();
-        short echoOffset = (short) 0;
-
-        while (bytesRead > 0) {
-            Util.arrayCopyNonAtomic(buffer, ISO7816.OFFSET_CDATA, echoBytes, echoOffset, bytesRead);
-            echoOffset += bytesRead;
-            bytesRead = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
-        }
-
-        apdu.setOutgoing();
-        apdu.setOutgoingLength(echoOffset);
-        // echo data
-        apdu.sendBytesLong(echoBytes, (short) 0, echoOffset);
-    }
-
     private void registerMessageToSign(APDU apdu) {
         if (!pin.isValidated())
             ISOException.throwIt(SW_PIN_VERIFICATION_REQUIRED);

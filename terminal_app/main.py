@@ -67,7 +67,8 @@ class SmartCard:
         self.PIN = PIN(self.connection, APPLET_AID, APDU_SELECT)
 
     def verify(self):
-        return self.PIN.inputPin()
+        if not self.PIN.inputPin():
+            sys.exit(1)
 
     def send_apdu(self, apdu):
         response, sw1, sw2 = self.connection.transmit(apdu)
@@ -149,7 +150,10 @@ class SmartCard:
         return self.last_signed_message
 
     def interactive_shell(self) -> None:
-        self.select_applet()
+        _, sw1, _ = self.select_applet()
+        if sw1 == 0x69:
+            logging.error("Permission Denied (Card blocked)")
+            sys.exit(1)
         self.verify()
         while True:
             print("1 - Change PIN")
