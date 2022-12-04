@@ -3,6 +3,18 @@ from smartcard.CardType import AnyCardType
 from smartcard.CardConnection import CardConnection
 from smartcard.CardRequest import CardRequest
 from src import *
+import logging
+import sys
+
+root = logging.getLogger()
+root.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter(
+    '[%(asctime)s - %(levelname)s] - %(message)s')
+handler.setFormatter(formatter)
+root.addHandler(handler)
 
 APPLET = 0x80
 VERIFY = 0x20
@@ -11,7 +23,6 @@ P1_INST_INST = 0x04
 INS_RSA_MODULUS = 0x01
 INS_RSA_EXPONENT = 0x02
 INS_RSA_SIGNATURE = 0x03
-INS_ECHO_MESSAGE = 0x05
 INS_REGISTER_MESSAGE = 0x06
 INS_SEND_REGISTERED_MESSAGE = 0x07
 
@@ -23,7 +34,6 @@ APDU_SELECT = [0x00, 0xA4, P1_INST_INST, 0x00, len(APPLET_AID)] + APPLET_AID
 APDU_RSA_MOD = [APPLET, INS_RSA_MODULUS, 0x00, 0x00, 0x00]
 APDU_RSA_EXPONENT = [APPLET, INS_RSA_EXPONENT, 0x00, 0x00, 0x00]
 APDU_SIGN = [APPLET, INS_RSA_SIGNATURE, 0x00, 0x00, 0x00]
-APDU_ECHO = [APPLET, INS_ECHO_MESSAGE, 0x00, 0x00]
 APDU_REGISTER = [APPLET, INS_REGISTER_MESSAGE, 0x00, 0x00]
 APDU_SEND_REGISTERED = [APPLET, INS_SEND_REGISTERED_MESSAGE, 0x00, 0x00, 0x00]
 
@@ -50,9 +60,10 @@ class SmartCard:
         self._connect()
 
     def _connect(self):
-        observer = ConsoleCardConnectionObserver()
+        logging.info(f"Connected to card {cardservice.connection.getReader()}")
+
         if self.debug:
-            self.connection.addObserver(observer)
+            self.connection.addObserver(ConsoleCardConnectionObserver())
         self.PIN = PIN(self.connection, APPLET_AID, APDU_SELECT)
 
     def verify(self):
@@ -65,6 +76,7 @@ class SmartCard:
         return response, sw1, sw2
 
     def select_applet(self):
+        logging.info(f"Selecting applet...")
         return self.send_apdu(APDU_SELECT + [len(APPLET_AID)] + APPLET_AID)
 
     def hello(self):
@@ -94,7 +106,8 @@ class SmartCard:
     @property
     def rsa_key(self):
         if self._rsa_key is None:
-            print("No public key loaded, asking for RSA public key to SmartCard...")
+            logging.info(
+                "No public key loaded, asking for RSA public key to SmartCard...")
             self._rsa_key = self.ask_rsa_public_key()
         return self._rsa_key
 
@@ -111,19 +124,28 @@ class SmartCard:
 
     def verify_signature(self, message: bytes):
         if self.last_signed_message is None:
-            print("No message signed")
+            logging.info("No message signed")
             return False
         return self.rsa_key.verify(message, self.last_signed_message)
 
     def register_message(self, message=None):
+        if len(message) >= 128:
+            logging.error(f"Message too long max length is 127. Please retry.")
+            raise ValueError("Message too long")
         m_bytes = [int(x) for x in message.encode("utf-8")]
         apdu = (APDU_REGISTER + [len(m_bytes)] + m_bytes)
         response, _, _ = self.connection.transmit(apdu)
         return response
 
-    def sign_message_registered(self):
+    def sign_message_registered(self, message=None):
+        try:
+            self.register_message(message)
+        except ValueError:
+            return
         self.last_signed_message = bytes(
             self.send_apdu(APDU_SEND_REGISTERED)[0])
+        logging.info(
+            f"Signature from SmartCard: {self.last_signed_message.hex()}")
         return self.last_signed_message
 
     def interactive_shell(self) -> None:
@@ -138,26 +160,23 @@ class SmartCard:
                   ")" if self.last_signed_message is not None else "(No message have been signed yet)"))
             print("6 - Sign message")
             print("0 - Exit")
-            choice = input("Your choice : ")
+            choice = input("Your choice : \n>> ")
             if choice == "1":
                 self.change_pin()
                 self.verify()
             elif choice == "2":
-                print("n :", self.get_n())
+                logging.info(f"n : {self.get_n()}")
             elif choice == "3":
-                print("e: ", self.get_e())
+                logging.info(f"e: {self.get_e()}")
             elif choice == "4":
-                print(self.rsa_key.key.export_key())
+                print(self.rsa_key.key.export_key().decode("utf-8"))
             elif choice == "5":
-                message = input("Message : ")
-                print(f"Check {message} signature")
-                print(self.verify_signature(message.encode("utf-8")))
+                message = input("Message to verify: ")
+                logging.info(f"Checking \"{message}\" signature")
+                self.verify_signature(message.encode("utf-8"))
             elif choice == "6":
-                message = input("Message : ")
-                self.register_message(message)
-                self.sign_message_registered()
-                print("Signature from SmartCard: ",
-                      self.last_signed_message.hex())
+                message = input("Message to sign: ")
+                self.sign_message_registered(message)
 
             elif choice == "0":
                 break
@@ -168,7 +187,7 @@ class SmartCard:
 if __name__ == "__main__":
     start()
     cardtype = AnyCardType()
-    cardrequest = CardRequest(timeout=1, cardType=cardtype)
+    cardrequest = CardRequest(timeout=None, cardType=cardtype)
     cardservice = cardrequest.waitforcard()
     cardservice.connection.connect()
     card = SmartCard(cardservice.connection)

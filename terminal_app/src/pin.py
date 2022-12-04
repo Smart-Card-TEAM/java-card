@@ -7,7 +7,6 @@ class PIN:
         self.INS_AUTH = 0x20
         self.INS_ACTIVATE = 0x04
         self.connection = connection
-        print(self.connection)
 
     def verify(self, pin):
         try:
@@ -45,9 +44,9 @@ class PIN:
         except:
             print("PIN must be numeric")
             return False
-        adpu = [self.CLA, self.INS_ACTIVATE,
+        APDU = [self.CLA, self.INS_ACTIVATE,
                 0x00, 0x00, len(new_pin)] + new_pin
-        data, sw1, sw2 = self.connection.transmit(adpu)
+        data, sw1, sw2 = self.connection.transmit(APDU)
         if sw1 == 0x90 and sw2 == 0x00:
             return True
         else:

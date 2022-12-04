@@ -211,9 +211,6 @@ public class AppletJavaCard extends Applet {
             case INS_MODULUS:
                 exportPublicKeyModulusAPDU(apdu);
                 break;
-            case ECHO_MESSAGE:
-                getMessageToSign(apdu);
-                break;
             case REGISTER_MESSAGE:
                 registerMessageToSign(apdu);
                 break;

@@ -1,67 +1,62 @@
 # JavaCard
 
-- export JC_HOME_TOOLS=/home/kali/java-card/sdks/jc211_kit
-- export JAVA_HOME=/usr/lib/jvm/zulu-8-amd64/
-- export PATH=$JAVA_HOME/bin:$JC_HOME_TOOLS/bin:$PATH
-
-# Exemple d'upload d'une applet sur smartcard
+This project implements cryptography algorithms for Java Card 2.1.1. RSA and SHA-1 are used for the signature. The algorithm is based on the [PKCS#1 v1.5](http://tools.ietf.org/html/rfc2313) standard.
 
 
+## Set up project environment
 
-Il faut se mettre dans `./java-card/sdks/jc211_kit/samples/`
+Export sdk path to environment variable `JC_HOME`:
+
+    export JC_HOME=/path/to/java_card_kit-2_1_1
+
+Export JAVA_HOME to environment variable `JAVA_HOME`:
+
+    export JAVA_HOME=/usr/lib/jvm/zulu-8-amd64/
+Export PATH to environment variable `PATH`:
+
+    export PATH=$JAVA_HOME/bin:$JC_HOME_TOOLS/bin:$PATH
+
+
+## How to use
+
+1. Install dependencies:
 ```
-javac -source 1.2 -target 1.1 -g -cp ../bin/api.jar com/sun/javacard/samples/HelloWorld/HelloWorld.java
-```
-
-```
-java -classpath $JC_HOME_TOOLS/bin/converter.jar:. com.sun.javacard.converter.Converter -verbose -exportpath $JC_HOME_TOOLS/api_export_files:HelloWorld -classdir . -applet 0xa0:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1:0x2 com.sun.javacard.samples.HelloWorld.HelloWorld com.sun.javacard.samples.HelloWorld 0x0a:0x0:0x0:0x0:0x62:0x3:0x1:0xc:0x6:0x1 1.0
-```
-
-## GPShell
-
-Se mettre dans le dossier `./java-card/sdks/jc211_kit/samples/com/sun/javacard/samples/HelloWorld/javacard`
-
-Lister les applets sur la smartcard:
-```
-mode_201
-gemXpressoPro
-enable_trace
-establish_context
-card_connect
-select -AID A000000018434D
-open_sc -security 0 -keyind 0 -keyver 0 -keyDerivation visa2 -key 47454d5850524553534f53414d504c45
-get_status -element 40
-card_disconnect
-release_context
+make install
 ```
 
-Upload l'applet `HelloWorld.java`:
-
+2. Compile and install the applet:
 ```
-mode_201
-enable_trace
-enable_timer
-establish_context
-card_connect
-select -AID A000000018434D00
-open_sc -security 3 -keyind 0 -keyver 0 -key 47454d5850524553534f53414d504c45 -keyDerivation visa2
-install -file HelloWorld.cap -sdAID A000000018434D00 -nvCodeLimit 4000
-card_disconnect
-release_context
+make
 ```
 
-Supprimer une applet via AID:
+3. Run client side application:
 ```
-mode_201
-gemXpressoPro
-enable_trace
-enable_timer
-establish_context
-card_connect
-select -AID A000000018434D00
-open_sc -security 0 -keyind 0 -keyver 0 -key 47454d5850524553534f53414d504c45
-delete -AID a00000006203010c060102
-delete -AID 0a0000006203010c0601
-card_disconnect
-release_context
+python3 terminal_app/main.py
 ```
+
+## Good to know
+
+List all applets on smartcard:
+```
+make list_apps
+```
+
+Upload applet `smart_card/AppletJavaCard.java`:
+
+```
+make install_applet
+```
+
+Delete applet:
+```
+make uninstall_applet
+```
+
+### Exemples
+
+
+![Welcome](./screenshots/welcome.png)
+
+![Sign and Verify](./screenshots/sign_verify.png)
+
+![Public Key](./screenshots/public_key.png)

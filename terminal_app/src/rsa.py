@@ -1,7 +1,7 @@
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA
-
+import logging
 
 class RSAVerification:
     def __init__(self, n, e) -> None:
@@ -12,8 +12,8 @@ class RSAVerification:
         h = SHA.new(message)
         try:
             pkcs1_15.new(self.key).verify(h, signature)
-            print("The signature is valid.")
+            logging.info("The signature is valid.")
             return True
         except:
-            print("The signature is not valid.")
+            logging.info("The signature is not valid.")
             return False
